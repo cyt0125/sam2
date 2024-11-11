@@ -2,71 +2,211 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>上传视频</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频上传与处理</title>
     <style>
-        #frame-container {
+        body {
             display: flex;
-            flex-wrap: wrap;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
         }
-        .frame {
-            margin: 5px;
+        nav {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+        }
+        nav button {
+            margin-left: 10px;
+        }
+        .container {
+            display: flex;
+            flex: 1;
+        }
+        .upload-area {
+            flex: 0 0 60%;
+            padding: 20px;
+            border: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: black;  /* 黑色背景 */
+        }
+        .video-player {
+            width: 100%;
+            height: auto;
+            display: none;  /* 初始隐藏视频播放器 */
+        }
+        .sidebar {
+            flex: 1;
+            padding: 20px;
+            border-left: 1px solid #ccc;
         }
     </style>
 </head>
 <body>
-    <h1>上传视频</h1>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <input type="file" name="video" accept="video/*" required>
-        <button type="submit">上传并提取帧</button>
-    </form>
-    
-    <img src="{{ MEDIA_URL }}04_coffee_frames/00000.jpg" alt="Frame" width="200">
-    {% if frames %}
-        <h2>提取的帧</h2>
-        <div id="frame-container">
-            {% for n in frames %}
-                <div class="frame">
-                    <img src="{{ MEDIA_URL }}{{ n }}" alt="Frame" width="200">
-                </div>
-            {% endfor %}
+    <nav>
+        <label for="model_size">Model Size:</label>
+        <select id="model_size">
+            <option value="large">Large</option>
+            <option value="base_plus">Base Plus</option>
+            <option value="small">Small</option>
+            <option value="tiny">Tiny</option>
+        </select>
+        <button id="initStateBtn">Init State</button>
+        <button id="resetStateBtn">Reset State</button>
+    </nav>
+    <div class="container">
+        <div class="upload-area">
+            <h2>上传视频</h2>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="file" id="videoInput" accept="video/*" required>
+            </form>
+            <video id="videoPlayer" class="video-player" controls>
+                <source id="videoSource" src="" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <div class="controls">
+                <input type="range" id="timeline" class="timeline" value="0" step="1" min="0">
+                <button id="playPauseBtn">播放</button>
+            </div>
         </div>
-
-        <h2>当前帧</h2>
-        <img id="currentFrame" src="{{ frames.0 }}" alt="Current Frame" width="600">
-
-        <h2>帧控制</h2>
-        <button id="prevFrame">上一帧</button>
-        <button id="nextFrame">下一帧</button>
-        <button id="selectFrame">选择当前帧</button>
-        <p id="selectedFrameMessage"></p>
-    {% endif %}
-
+        <div class="sidebar">
+            <h2>功能区域</h2>
+            <!-- 这里可以添加其他功能 -->
+        </div>
+    </div>
     <script>
-        const frames = {{ frames|safe }};  // 将帧路径传递给 JavaScript
-        let currentFrameIndex = 0;
+    const videoInput = document.getElementById('videoInput');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const videoSource = document.getElementById('videoSource');
+    const timeline = document.getElementById('timeline');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    let isPlaying = false;
+    let firstClick = true;  // 用于判断第一次点击
 
-        const currentFrameImg = document.getElementById('currentFrame');
 
-        document.getElementById('prevFrame').onclick = function() {
-            if (currentFrameIndex > 0) {
-                currentFrameIndex--;
-                currentFrameImg.src = frames[currentFrameIndex];
+    videoInput.onchange = async function() {
+        const file = videoInput.files[0];
+        if (file) {
+            const formData = new FormData();
+            formData.append('video', file);
+
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            const response = await fetch('/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                videoSource.src = data.video_url;  // Get the video URL
+                videoPlayer.style.display = 'block';  // Show the video player
+                videoPlayer.load();  // Reload the video
+                videoPlayer.play();  // Play the video
+                
+                // 设置时间轴的最大值
+                videoPlayer.onloadedmetadata = function() {
+                    timeline.max = Math.floor(videoPlayer.duration);  // 设置最大值为视频时长
+                };
+                
+                // 更新时间轴
+                videoPlayer.ontimeupdate = function() {
+                    timeline.value = Math.floor(videoPlayer.currentTime);  // 更新当前时间
+                };
+            
+                // 获取文件名并传递给 init_state
+                const videoFileName = file.name;  // 获取文件名
+                document.getElementById('initStateBtn').setAttribute('data-video-filename', videoFileName);
+        }
+            
+        }
+    };
+
+    playPauseBtn.onclick = function() {
+        if (isPlaying) {
+            videoPlayer.pause();
+            playPauseBtn.textContent = '播放';
+        } else {
+            videoPlayer.play();
+            playPauseBtn.textContent = '暂停';
+        }
+        isPlaying = !isPlaying;
+        firstClick = true;  // 重置第一次点击状态
+        
+    };
+
+   videoPlayer.addEventListener('click', function(event) {
+        if (firstClick) {
+            // 第一次点击时暂停视频
+            videoPlayer.pause();
+            playPauseBtn.textContent = '播放';
+            isPlaying = false;
+            firstClick = false;  // 设置为 false，后续点击将传递坐标
+        } else {
+            // 传递当前帧和坐标
+            const rect = videoPlayer.getBoundingClientRect();
+            const x = event.clientX - rect.left;  // 鼠标点击的 x 坐标
+            const y = event.clientY - rect.top;   // 鼠标点击的 y 坐标
+            const frameIndex = Math.floor(videoPlayer.currentTime);  // 获取当前帧编号
+
+            // 发送点击信息到后端
+            fetch('/add_point/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'  // 确保 CSRF 令牌正确
+                },
+                body: JSON.stringify({ frame_index: frameIndex, x: x, y: y })
+            }).then(response => {
+                if (response.ok) {
+                    console.log('Point added successfully');
+                } else {
+                    console.error('Error adding point');
+                }
+            });
+        }
+    });
+
+    timeline.oninput = function() {
+        videoPlayer.currentTime = timeline.value;  // 设置视频当前时间
+    };
+    
+    document.getElementById('initStateBtn').onclick = async function() {
+        const modelSize = document.getElementById('model_size').value;
+        const videoFileName = this.getAttribute('data-video-filename');
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        const response = await fetch('/init_state/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                video_filename: videoFileName, 
+                model_size: modelSize
+            })
+        });
+
+        if (response.ok) {
+                const data = await response.json();
+                console.log('Init State successful:', data);
+            } else {
+                console.error('Error initializing state');
             }
         };
 
-        document.getElementById('nextFrame').onclick = function() {
-            if (currentFrameIndex < frames.length - 1) {
-                currentFrameIndex++;
-                currentFrameImg.src = frames[currentFrameIndex];
-            }
-        };
-
-        document.getElementById('selectFrame').onclick = function() {
-            const selectedFrame = frames[currentFrameIndex];
-            document.getElementById('selectedFrameMessage').innerText = '已选择帧: ' + selectedFrame;
-            // 这里可以添加代码将选择的帧发送到服务器或进行其他处理
-        };
+    document.getElementById('resetStateBtn').onclick = function() {
+        // Trigger reset_state function logic
+        console.log('Reset State triggered');
+    };
     </script>
 </body>
 </html>

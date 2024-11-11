@@ -77,7 +77,6 @@ def reset_state(predictor,inference_state):
     predictor.reset_state(inference_state)
     return predictor
 
-
 def add_point(
         predictor,
         inference_state,
