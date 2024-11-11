@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>处理结果</title>
+</head>
+<body>
+    <h1>视频处理完成</h1>
+    <p>{{ message }}</p>
+    <video width="640" height="480" controls>
+        <source src="{{ MEDIA_URL }}{{ video_path }}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <br>
+    <a href="{% url 'process_video' %}">返回上传页面</a>
+</body>
+</html>

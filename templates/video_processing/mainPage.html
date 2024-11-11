@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>上传视频</title>
+    <style>
+        #frame-container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .frame {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>上传视频</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="video" accept="video/*" required>
+        <button type="submit">上传并提取帧</button>
+    </form>
+    
+    <img src="{{ MEDIA_URL }}04_coffee_frames/00000.jpg" alt="Frame" width="200">
+    {% if frames %}
+        <h2>提取的帧</h2>
+        <div id="frame-container">
+            {% for n in frames %}
+                <div class="frame">
+                    <img src="{{ MEDIA_URL }}{{ n }}" alt="Frame" width="200">
+                </div>
+            {% endfor %}
+        </div>
+
+        <h2>当前帧</h2>
+        <img id="currentFrame" src="{{ frames.0 }}" alt="Current Frame" width="600">
+
+        <h2>帧控制</h2>
+        <button id="prevFrame">上一帧</button>
+        <button id="nextFrame">下一帧</button>
+        <button id="selectFrame">选择当前帧</button>
+        <p id="selectedFrameMessage"></p>
+    {% endif %}
+
+    <script>
+        const frames = {{ frames|safe }};  // 将帧路径传递给 JavaScript
+        let currentFrameIndex = 0;
+
+        const currentFrameImg = document.getElementById('currentFrame');
+
+        document.getElementById('prevFrame').onclick = function() {
+            if (currentFrameIndex > 0) {
+                currentFrameIndex--;
+                currentFrameImg.src = frames[currentFrameIndex];
+            }
+        };
+
+        document.getElementById('nextFrame').onclick = function() {
+            if (currentFrameIndex < frames.length - 1) {
+                currentFrameIndex++;
+                currentFrameImg.src = frames[currentFrameIndex];
+            }
+        };
+
+        document.getElementById('selectFrame').onclick = function() {
+            const selectedFrame = frames[currentFrameIndex];
+            document.getElementById('selectedFrameMessage').innerText = '已选择帧: ' + selectedFrame;
+            // 这里可以添加代码将选择的帧发送到服务器或进行其他处理
+        };
+    </script>
+</body>
+</html>

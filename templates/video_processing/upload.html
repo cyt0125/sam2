@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>上传视频</title>
+</head>
+<body>
+    <h1>上传视频</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="video" accept="video/*" required>
+        <br>
+        <label for="model_size">模型大小:</label>
+        <select name="model_size" id="model_size">
+            <option value="large">large</option>
+            <option value="base_plus">base_plus</option>
+            <option value="small">small</option>
+            <option value="tiny">tiny</option>
+        </select>
+        <br>
+        <label for="ann_frame_idx">注释帧索引:</label>
+        <input type="number" name="ann_frame_idx" id="ann_frame_idx" required>
+        <br>
+        <label for="ann_obj_id">注释对象 ID:</label>
+        <input type="number" name="ann_obj_id" id="ann_obj_id" required>
+        <br>
+        <label for="points">点:</label>
+        <input type="text" name="points" id="points" placeholder="格式: x1,y1;x2,y2" required>
+        <br>
+        <label for="labels">标签:</label>
+        <input type="text" name="labels" id="labels" placeholder="格式: 0,1,1,0" required>
+        <br>
+        <button type="submit">上传并处理</button>
+        <button type="submit" name="reset" value="true">重置模型</button>
+    </form>
+</body>
+</html>
