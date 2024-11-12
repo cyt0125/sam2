@@ -1,5 +1,7 @@
+from datetime import datetime
+
 from django.shortcuts import render
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 import os
@@ -92,13 +94,22 @@ def add_tracking_point(request):
             object_effect=None,
             background_effect=None
         )
+        relative_output_path = os.path.relpath(output_path, settings.MEDIA_ROOT)
+        video_url = os.path.join(settings.MEDIA_URL, relative_output_path)
 
         return JsonResponse({
             'status': 'success',
-            'output_video': f'/media/output/{video_name}'
+            'output_video': video_url,
+            'timestamp': str(datetime.now().timestamp())  # Add timestamp to prevent caching
         })
+        response['Content-Disposition'] = 'inline'
+        return response
+
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request'})
+
+
+
 
 
 @csrf_exempt
@@ -163,3 +174,13 @@ def get_frame_info(request):
         })
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request'})
+
+
+@csrf_exempt
+def serve_video(request, path):
+    video_path = os.path.join(settings.MEDIA_ROOT, path)
+    content_type = 'video/mp4'  # or determine dynamically based on file extension
+
+    response = FileResponse(open(video_path, 'rb'), content_type=content_type)
+    response['Accept-Ranges'] = 'bytes'
+    return response

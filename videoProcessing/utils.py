@@ -147,49 +147,6 @@ def predict_video_all(
 
     return video_segments_all
 
-def apply_masks_to_video(video_path, video_segments_all, output_path):
-    cap = cv2.VideoCapture(video_path)
-
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    # 创建 VideoWriter 对象以保存输出视频
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # 使用 mp4 编码
-    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-
-    frame_index = 0
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        # 获取当前帧的掩码
-        if frame_index in video_segments_all:
-            masks = video_segments_all[frame_index]  # 获取当前帧的所有掩码
-
-            for obj_id, mask in masks.items():
-                # mask 的形状是 (1, 720, 1280)，我们需要将其转换为 (720, 1280)
-                mask = mask[0]  # 去掉第一个维度，变为 (720, 1280)
-
-                # 将布尔掩码转换为 uint8 类型
-                mask = (mask * 255).astype(np.uint8)  # 将 True/False 转换为 255/0
-
-                colored_mask = np.zeros((height, width, 3), dtype=np.uint8)  # 创建一个全黑的图像
-                colored_mask[mask == 255] = [0, 255, 255]
-
-                masked_frame = cv2.addWeighted(frame, 1, colored_mask, 0.5, 0)  # 叠加掩码到帧上
-
-                out.write(masked_frame)
-        else:
-            out.write(frame)
-
-        frame_index += 1
-
-    # 释放资源
-    cap.release()
-    out.release()
-    cv2.destroyAllWindows()
 
 
 # Helper Function to Apply Object Effects
@@ -359,15 +316,15 @@ def apply_masks_to_video(video_path, video_segments_all, output_path, effect, ob
                     # Applies a color mask to the current frame
                     masked_frame = cv2.addWeighted(frame, 1, colored_mask, 0.5, 0)  # Overlay the mask onto the frame
 
-                    # Write the processed frame to the output video
+                # Write the processed frame to the output video
                 out.write(masked_frame)
-            else:
-                # If there is no mask, write directly to the original frame
-                out.write(frame)
+        else:
+            # If there is no mask, write directly to the original frame
+            out.write(frame)
 
-            frame_index += 1
+        frame_index += 1
 
-            # Release resources
-        cap.release()
-        out.release()
-        cv2.destroyAllWindows()
+    # Release resources
+    cap.release()
+    out.release()
+    cv2.destroyAllWindows()
