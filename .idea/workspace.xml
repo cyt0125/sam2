@@ -4,9 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c2bec0ce-b64a-452d-86d0-c604c7b4f632" name="更改" comment="add">
+    <list default="true" id="c2bec0ce-b64a-452d-86d0-c604c7b4f632" name="更改" comment="add huang">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/videoProcessing/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/videoProcessing/utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/videoProcessing/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/videoProcessing/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -28,6 +27,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;GaryHuang666&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/ruiczhu/videoProcessWithSam2.git&quot;,
+    &quot;accountId&quot;: &quot;efe23272-41b7-4e58-ba6e-114f4e6ab6e5&quot;
+  }
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 6
 }</component>
@@ -105,6 +116,8 @@
       <workItem from="1731424425489" duration="95000" />
       <workItem from="1731424528464" duration="586000" />
       <workItem from="1731425131346" duration="242000" />
+      <workItem from="1731425456348" duration="1583000" />
+      <workItem from="1731427539963" duration="319000" />
     </task>
     <task id="LOCAL-00001" summary="add">
       <option name="closed" value="true" />
@@ -114,7 +127,15 @@
       <option name="project" value="LOCAL" />
       <updated>1731410685310</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="add huang">
+      <option name="closed" value="true" />
+      <created>1731425527633</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1731425527633</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -133,6 +154,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="add" />
-    <option name="LAST_COMMIT_MESSAGE" value="add" />
+    <MESSAGE value="add huang" />
+    <option name="LAST_COMMIT_MESSAGE" value="add huang" />
   </component>
 </project>
