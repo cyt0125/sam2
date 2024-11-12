@@ -3,210 +3,341 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>视频上传与处理</title>
+    <title>Video Tracking System</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            margin: 0;
-        }
-        nav {
-            background-color: #333;
-            color: white;
-            padding: 10px;
-        }
-        nav button {
-            margin-left: 10px;
-        }
-        .container {
-            display: flex;
-            flex: 1;
-        }
-        .upload-area {
-            flex: 0 0 60%;
-            padding: 20px;
-            border: 1px solid #ccc;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background-color: black;  /* 黑色背景 */
-        }
-        .video-player {
-            width: 100%;
-            height: auto;
-            display: none;  /* 初始隐藏视频播放器 */
-        }
         .sidebar {
-            flex: 1;
+            height: calc(100vh - 56px);
+            width: 250px;
+            position: fixed;
+            left: 0;
+            background-color: #f8f9fa;
             padding: 20px;
-            border-left: 1px solid #ccc;
+            overflow-y: auto;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            min-height: 480px;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .upload-message {
+            color: white;
+            font-size: 24px;
+        }
+
+        .video-controls {
+            background-color: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 0 0 5px 5px;
+        }
+
+        .effect-button {
+            margin: 5px;
+            width: 100%;
+        }
+
+        #videoElement {
+            max-width: 100%;
+            max-height: 70vh;
+        }
+
+        .point-coordinates {
+            position: absolute;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 5px;
+            border-radius: 3px;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <nav>
-        <label for="model_size">Model Size:</label>
-        <select id="model_size">
-            <option value="large">Large</option>
-            <option value="base_plus">Base Plus</option>
-            <option value="small">Small</option>
-            <option value="tiny">Tiny</option>
-        </select>
-        <button id="initStateBtn">Init State</button>
-        <button id="resetStateBtn">Reset State</button>
-    </nav>
-    <div class="container">
-        <div class="upload-area">
-            <h2>上传视频</h2>
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <input type="file" id="videoInput" accept="video/*" required>
-            </form>
-            <video id="videoPlayer" class="video-player" controls>
-                <source id="videoSource" src="" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-            <div class="controls">
-                <input type="range" id="timeline" class="timeline" value="0" step="1" min="0">
-                <button id="playPauseBtn">播放</button>
-            </div>
-        </div>
-        <div class="sidebar">
-            <h2>功能区域</h2>
-            <!-- 这里可以添加其他功能 -->
+
+<!-- Top Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">Video Tracking System</a>
+        <div class="d-flex">
+            <label class="btn btn-primary me-2">
+                Upload Video <input type="file" id="videoUpload" accept="video/*" style="display: none;">
+            </label>
         </div>
     </div>
-    <script>
-    const videoInput = document.getElementById('videoInput');
-    const videoPlayer = document.getElementById('videoPlayer');
-    const videoSource = document.getElementById('videoSource');
-    const timeline = document.getElementById('timeline');
-    const playPauseBtn = document.getElementById('playPauseBtn');
-    let isPlaying = false;
-    let firstClick = true;  // 用于判断第一次点击
+</nav>
 
+<!-- Sidebar -->
+<div class="sidebar">
+    <h5 class="mb-3">Controls</h5>
+    
+    <!-- Point Tracking Controls -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="card-title">Point Tracking</h6>
+            <div class="form-check form-switch mb-3">
+                <input class="form-check-input" type="checkbox" id="addPointSwitch">
+                <label class="form-check-label" for="addPointSwitch">Add Point Mode</label>
+            </div>
+            <div id="pointControls" style="display: none;">
+                <div class="mb-2">
+                    <label>Object ID:</label>
+                    <input type="number" class="form-control" id="objId" min="0">
+                </div>
+                <div class="mb-2">
+                    <label>Label:</label>
+                    <select class="form-select" id="labelSelect">
+                        <option value="1">Positive (1)</option>
+                        <option value="0">Negative (0)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    videoInput.onchange = async function() {
-        const file = videoInput.files[0];
-        if (file) {
-            const formData = new FormData();
-            formData.append('video', file);
-
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-            const response = await fetch('/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken
-                },
-                body: formData
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                videoSource.src = data.video_url;  // Get the video URL
-                videoPlayer.style.display = 'block';  // Show the video player
-                videoPlayer.load();  // Reload the video
-                videoPlayer.play();  // Play the video
-                
-                // 设置时间轴的最大值
-                videoPlayer.onloadedmetadata = function() {
-                    timeline.max = Math.floor(videoPlayer.duration);  // 设置最大值为视频时长
-                };
-                
-                // 更新时间轴
-                videoPlayer.ontimeupdate = function() {
-                    timeline.value = Math.floor(videoPlayer.currentTime);  // 更新当前时间
-                };
+    <!-- Effects Controls -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6 class="card-title">Effects</h6>
             
-                // 获取文件名并传递给 init_state
-                const videoFileName = file.name;  // 获取文件名
-                document.getElementById('initStateBtn').setAttribute('data-video-filename', videoFileName);
-        }
-            
-        }
-    };
+            <!-- Object Effects -->
+            <div class="mb-3">
+                <label>Object Effect:</label>
+                <select class="form-select" id="objectEffect">
+                    <option value="">None</option>
+                    <option value="erase">Erase</option>
+                    <option value="gradient">Gradient</option>
+                    <option value="pixelate">Pixelate</option>
+                    <option value="overlay">Overlay</option>
+                    <option value="emoji">Emoji</option>
+                    <option value="burst">Burst</option>
+                </select>
+            </div>
 
-    playPauseBtn.onclick = function() {
-        if (isPlaying) {
-            videoPlayer.pause();
-            playPauseBtn.textContent = '播放';
-        } else {
-            videoPlayer.play();
-            playPauseBtn.textContent = '暂停';
-        }
-        isPlaying = !isPlaying;
-        firstClick = true;  // 重置第一次点击状态
-        
-    };
+            <!-- Background Effects -->
+            <div class="mb-3">
+                <label>Background Effect:</label>
+                <select class="form-select" id="backgroundEffect">
+                    <option value="">None</option>
+                    <option value="erase">Erase</option>
+                    <option value="gradient">Gradient</option>
+                    <option value="pixelate">Pixelate</option>
+                    <option value="desaturate">Desaturate</option>
+                    <option value="blur">Blur</option>
+                </select>
+            </div>
 
-   videoPlayer.addEventListener('click', function(event) {
-        if (firstClick) {
-            // 第一次点击时暂停视频
-            videoPlayer.pause();
-            playPauseBtn.textContent = '播放';
-            isPlaying = false;
-            firstClick = false;  // 设置为 false，后续点击将传递坐标
-        } else {
-            // 传递当前帧和坐标
-            const rect = videoPlayer.getBoundingClientRect();
-            const x = event.clientX - rect.left;  // 鼠标点击的 x 坐标
-            const y = event.clientY - rect.top;   // 鼠标点击的 y 坐标
-            const frameIndex = Math.floor(videoPlayer.currentTime);  // 获取当前帧编号
+            <button class="btn btn-primary w-100" id="applyEffects">Apply Effects</button>
+        </div>
+    </div>
+</div>
 
-            // 发送点击信息到后端
-            fetch('/add_point/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'  // 确保 CSRF 令牌正确
-                },
-                body: JSON.stringify({ frame_index: frameIndex, x: x, y: y })
-            }).then(response => {
-                if (response.ok) {
-                    console.log('Point added successfully');
-                } else {
-                    console.error('Error adding point');
+<!-- Main Content -->
+<div class="main-content">
+    <div class="video-container">
+        <div class="upload-message" id="uploadMessage">Upload a video!</div>
+        <video id="videoElement" style="display: none;" controls>
+            Your browser does not support the video element.
+        </video>
+        <div class="point-coordinates" id="coordinates"></div>
+    </div>
+
+    <!-- Video Controls -->
+    <div class="video-controls mt-2">
+        <div class="btn-group">
+            <button class="btn btn-primary" id="playPauseBtn">
+                <i class="fas fa-play"></i>
+            </button>
+            <button class="btn btn-success" id="startTrackingBtn" disabled>
+                Start Tracking
+            </button>
+        </div>
+        <span class="text-white ms-3" id="frameInfo"></span>
+    </div>
+</div>
+
+<!-- Bootstrap and jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+let currentVideoPath = null;
+let isAddPointMode = false;
+let currentFrameIdx = 0;
+
+// Video Upload Handler
+$('#videoUpload').change(function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const formData = new FormData();
+        formData.append('video', file);
+
+        $.ajax({
+            url: '/upload/',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.status === 'success') {
+                    currentVideoPath = response.video_path;
+                    $('#uploadMessage').hide();
+                    $('#videoElement').show().attr('src', `/media/uploads/${file.name}`);
+                    getFrameInfo(response.video_path);
                 }
-            });
+            }
+        });
+    }
+});
+
+// Point Tracking Mode Toggle
+$('#addPointSwitch').change(function() {
+    isAddPointMode = $(this).is(':checked');
+    $('#pointControls').toggle(isAddPointMode);
+    $('#videoElement').css('cursor', isAddPointMode ? 'crosshair' : 'default');
+});
+
+// Video Click Handler for Point Addition
+$('#videoElement').click(function(e) {
+    if (!isAddPointMode) return;
+
+    const video = e.target;
+    const rect = video.getBoundingClientRect();
+    
+    // Calculate actual coordinates
+    const videoWidth = video.videoWidth;  // actual video width
+    const videoHeight = video.videoHeight; // actual video height
+    
+    // Calculate scaling factors
+    const scaleX = videoWidth / rect.width;
+    const scaleY = videoHeight / rect.height;
+    
+    // Calculate actual coordinates in video space
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    
+    // Round coordinates to integers
+    const actualX = Math.round(x);
+    const actualY = Math.round(y);
+
+    // Show coordinates
+    $('#coordinates').css({
+        left: e.clientX + 'px',
+        top: e.clientY + 'px',
+        display: 'block'
+    }).text(`x: ${actualX}, y: ${actualY}`);
+
+    // Update tracking data
+    const points = [actualX, actualY];  // Store as array of actual coordinates
+
+    currentFrameIdx = Math.floor(video.currentTime * video.fps);  // Assuming fps is stored
+    $('#startTrackingBtn').prop('disabled', false);
+});
+
+// Start Tracking Handler
+$('#startTrackingBtn').click(function() {
+    const coordinates = $('#coordinates').text().match(/x: (\d+), y: (\d+)/);
+    const points = [parseInt(coordinates[1]), parseInt(coordinates[2])];
+
+    const trackingData = {
+        frame_idx: currentFrameIdx,
+        obj_id: parseInt($('#objId').val()),
+        points: points,  // Now sending array of actual coordinates
+        labels: [parseInt($('#labelSelect').val())],
+        video_path: currentVideoPath
+    };
+
+    $.ajax({
+        url: '/add-tracking/',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(trackingData),
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#videoElement').attr('src', response.output_video);
+            }
         }
     });
+});
 
-    timeline.oninput = function() {
-        videoPlayer.currentTime = timeline.value;  // 设置视频当前时间
+// Add this to store FPS when video loads
+$('#videoElement').on('loadedmetadata', function() {
+    const video = this;
+    // Get video FPS
+    $.ajax({
+        url: '/get-frame-info/',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ video_path: currentVideoPath }),
+        success: function(response) {
+            video.fps = response.fps;
+        }
+    });
+});
+
+
+// Effect Application Handler
+$('#applyEffects').click(function() {
+    const effectData = {
+        object_effect: $('#objectEffect').val(),
+        background_effect: $('#backgroundEffect').val(),
+        video_path: currentVideoPath,
+        frame_idx: currentFrameIdx
     };
-    
-    document.getElementById('initStateBtn').onclick = async function() {
-        const modelSize = document.getElementById('model_size').value;
-        const videoFileName = this.getAttribute('data-video-filename');
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-        const response = await fetch('/init_state/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({
-                video_filename: videoFileName, 
-                model_size: modelSize
-            })
-        });
-
-        if (response.ok) {
-                const data = await response.json();
-                console.log('Init State successful:', data);
-            } else {
-                console.error('Error initializing state');
+    $.ajax({
+        url: '/apply-effects/',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(effectData),
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#videoElement').attr('src', response.output_video);
             }
-        };
+        }
+    });
+});
 
-    document.getElementById('resetStateBtn').onclick = function() {
-        // Trigger reset_state function logic
-        console.log('Reset State triggered');
-    };
-    </script>
+// Play/Pause Toggle
+$('#playPauseBtn').click(function() {
+    const video = $('#videoElement')[0];
+    if (video.paused) {
+        video.play();
+        $(this).html('<i class="fas fa-pause"></i>');
+    } else {
+        video.pause();
+        $(this).html('<i class="fas fa-play"></i>');
+    }
+});
+
+// Frame Information Retrieval
+function getFrameInfo(videoPath) {
+    $.ajax({
+        url: '/get-frame-info/',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ video_path: videoPath }),
+        success: function(response) {
+            $('#frameInfo').text(
+                `Total Frames: ${response.total_frames} | FPS: ${response.fps}`
+            );
+        }
+    });
+}
+
+</script>
+
 </body>
 </html>

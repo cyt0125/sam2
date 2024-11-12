@@ -190,3 +190,184 @@ def apply_masks_to_video(video_path, video_segments_all, output_path):
     cap.release()
     out.release()
     cv2.destroyAllWindows()
+
+
+# Helper Function to Apply Object Effects
+def apply_object_effect(frame, mask, effect):
+    result = frame.copy()
+
+    if effect == "erase":
+        # Replace object with white (erased)
+        result[mask == 255] = [255, 255, 255]  # Set object area to white
+
+    elif effect == "gradient":
+        # Create a horizontal gradient across the width of the mask
+        gradient = np.linspace(0, 255, frame.shape[1], dtype=np.uint8)  # Generate gradient over width
+        gradient = np.tile(gradient, (frame.shape[0], 1))  # Repeat gradient across height
+        gradient_3channel = np.dstack([gradient] * 3)  # Convert to 3-channel (R, G, B)
+
+        # Apply the gradient to the object region
+        result[mask == 255] = gradient_3channel[mask == 255]
+
+    elif effect == "pixelate":
+        # Pixelate the object by downscaling and then upscaling the object region
+        small = cv2.resize(result, (10, 10))  # Downscale to 10x10
+        pixelated_region = cv2.resize(small, (result.shape[1], result.shape[0]), interpolation=cv2.INTER_NEAREST)
+        result[mask == 255] = pixelated_region[mask == 255]
+
+    elif effect == "overlay":
+        # Apply a green overlay to the object
+        overlay = np.full_like(result, [0, 255, 0])  # Green overlay
+        result[mask == 255] = overlay[mask == 255]
+
+    elif effect == "emoji":
+        # Apply an emoji overlay to the object region (Make sure emoji.png exists)
+        emoji = cv2.resize(cv2.imread("C:/Users/26087/Desktop/emoji.png"), (mask.shape[1], mask.shape[0]))
+        result[mask == 255] = emoji[mask == 255]
+
+    elif effect == "burst":
+        result = draw_burst(result, mask)  # Use the 2D mask
+
+    return result
+
+
+# Helper Function to Apply Background Effects
+def apply_background_effect(frame, mask, effect):
+    result = frame.copy()
+
+    # Invert the mask to get the background (where mask == 0)
+    background_mask = (mask == 0)
+
+    if effect == "erase":
+        # Set the background to white (erased)
+        result[background_mask] = [255, 255, 255]  # Set background to white
+
+    elif effect == "gradient":
+        # Create a horizontal gradient across the width of the image
+        gradient = np.linspace(0, 255, frame.shape[1], dtype=np.uint8)  # Generate gradient over width
+        gradient = np.tile(gradient, (frame.shape[0], 1))  # Repeat gradient across height
+        gradient_3channel = np.dstack([gradient] * 3)  # Convert to 3-channel (R, G, B)
+
+        # Apply the gradient to the background region
+        result[background_mask] = gradient_3channel[background_mask]
+
+    elif effect == "pixelate":
+        # Pixelate the background by downscaling and then upscaling the background region
+        small = cv2.resize(result, (10, 10))  # Downscale to 10x10
+        pixelated_region = cv2.resize(small, (result.shape[1], result.shape[0]), interpolation=cv2.INTER_NEAREST)
+        result[background_mask] = pixelated_region[background_mask]
+
+    elif effect == "desaturate":
+        # Desaturate the background (convert to grayscale)
+        gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+        result[background_mask] = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)[background_mask]
+
+    elif effect == "blur":
+        # Blur the background using Gaussian blur
+        blurred_bg = cv2.GaussianBlur(result, (21, 21), 0)
+        result[background_mask] = blurred_bg[background_mask]
+
+    return result
+
+
+# Function to draw rays around the object (burst effect)
+def draw_burst(image, mask):
+    result = image.copy()
+
+    # Ensure the mask is single-channel before finding contours
+    if len(mask.shape) == 3:
+        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+
+    # Find contours in the mask
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # If no contours are found, return the original image
+    if len(contours) == 0:
+        return result
+
+    # Get the center of the object based on the mask contours
+    contour = contours[0]  # Assuming the largest contour is the object
+    M = cv2.moments(contour)
+    if M["m00"] == 0:
+        return result
+
+    # Calculate the object center from the moments
+    center_x = int(M["m10"] / M["m00"])
+    center_y = int(M["m01"] / M["m00"])
+    center = (center_x, center_y)
+
+    # Get image dimensions
+    height, width = image.shape[:2]
+
+    # Define the number of rays and the angle step between them
+    num_rays = 360  # You can adjust this for more or fewer rays
+    angle_step = 360 / num_rays
+
+    # Draw rays from the center point outward
+    for angle in np.arange(0, 360, angle_step):
+        radian = np.deg2rad(angle)
+        end_x = int(center_x + width * np.cos(radian))
+        end_y = int(center_y + width * np.sin(radian))
+
+        # Draw the line from the center to the calculated endpoint (white color, thickness 2)
+        cv2.line(result, (center_x, center_y), (end_x, end_y), (255, 255, 255), 2)
+
+    return result
+
+
+# Updated apply_masks_to_video function
+def apply_masks_to_video(video_path, video_segments_all, output_path, effect, object_effect, background_effect):
+    # Open the video file
+    cap = cv2.VideoCapture(video_path)
+
+    # Get the basic information of the video
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # Create a VideoWriter object to save the output video
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # Use mp4 encoding
+    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+
+    frame_index = 0
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        # Gets the mask of the current frame
+        if frame_index in video_segments_all:
+            masks = video_segments_all[frame_index]  # Gets all the masks for the current frame
+
+            for obj_id, mask in masks.items():
+                # The shape of the mask is (1, 720, 1280) and we need to convert it to (720, 1280)
+                mask = mask[0]  # Remove the first dimension and become (720, 1280)
+
+                # Convert the Boolean mask to a uint8 type
+                mask = (mask * 255).astype(np.uint8)  # Convert True/False to 255/0
+
+                if effect:
+                    # Apply object and background effects
+                    masked_frame = apply_background_effect(frame, mask, effect=background_effect)
+                    masked_frame = apply_object_effect(masked_frame, mask, effect=object_effect)
+                else:
+                    # Create a color mask
+                    colored_mask = np.zeros((height, width, 3),
+                                            dtype=np.uint8)  # Create an image that is completely black
+                    colored_mask[mask == 255] = [0, 255, 0]  # Set the mask area to green (BGR format)
+
+                    # Applies a color mask to the current frame
+                    masked_frame = cv2.addWeighted(frame, 1, colored_mask, 0.5, 0)  # Overlay the mask onto the frame
+
+                    # Write the processed frame to the output video
+                out.write(masked_frame)
+            else:
+                # If there is no mask, write directly to the original frame
+                out.write(frame)
+
+            frame_index += 1
+
+            # Release resources
+        cap.release()
+        out.release()
+        cv2.destroyAllWindows()

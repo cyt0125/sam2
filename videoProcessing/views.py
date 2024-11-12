@@ -1,57 +1,165 @@
 from django.shortcuts import render
-from django.http import JsonResponse
-from django.core.files.storage import FileSystemStorage
-from djangoProject import settings
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
 import os
+from django.conf import settings
+from .utils import *  # Import all functions from utils.py
 
-from videoProcessing.utils import init_state, add_point
+# Global variables to store predictor and inference_state
+global_predictor = None
+global_inference_state = None
 
 
+def index(request):
+    return render(request, 'video_processing/mainPage.html')
+
+
+@csrf_exempt
 def upload_video(request):
-    if request.method == 'POST' and request.FILES['video']:
+    if request.method == 'POST' and request.FILES.get('video'):
         video_file = request.FILES['video']
-        fs = FileSystemStorage()
-        video_path = fs.save(video_file.name, video_file)
-        video_url = fs.url(video_path)
-        video_dir = os.path.dirname(video_path)  # Get the directory of the uploaded video
-        return JsonResponse({'video_url': video_url, 'video_dir': video_dir})
 
-    return render(request, 'video_processing/mainPage.html', {
-        'MEDIA_URL': settings.MEDIA_URL,
-    })
+        # Create uploads directory if it doesn't exist
+        upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
+        os.makedirs(upload_dir, exist_ok=True)
 
-import json
+        # Save uploaded video
+        video_path = os.path.join(upload_dir, video_file.name)
+        with open(video_path, 'wb+') as destination:
+            for chunk in video_file.chunks():
+                destination.write(chunk)
 
-def init_state_view(request):
+        # Initialize model
+        global global_predictor, global_inference_state
+        global_predictor, global_inference_state = init_state(video_path, model_size='tiny')
+
+        return JsonResponse({
+            'status': 'success',
+            'video_path': video_path,
+            'message': 'Video uploaded successfully'
+        })
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'})
+
+
+@csrf_exempt
+def add_tracking_point(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        video_filename = data.get('video_filename')
-        model_size = data.get('model_size')
+        frame_idx = int(data.get('frame_idx'))
+        obj_id = int(data.get('obj_id'))
+        points = data.get('points')  # This will now be [x, y] coordinates
+        labels = data.get('labels')
 
-        video_dir = os.path.join(settings.MEDIA_ROOT, video_filename)
+        # Convert points to numpy array with correct shape
+        points_np = np.array([points], dtype=np.float32)  # Shape: (1, 2)
+        labels_np = np.array(labels, dtype=np.int32)
 
-        # 调用 init_state 函数
-        predictor, inference_state = init_state(video_dir, model_size)
+        global global_predictor, global_inference_state
 
-        return predictor, inference_state, JsonResponse({'status': 'success', 'message': 'State initialized successfully.'})
+        # Add point and get masks
+        out_obj_ids, out_mask_logits = add_point(
+            global_predictor,
+            global_inference_state,
+            frame_idx,
+            obj_id,
+            points=points_np,
+            labels=labels_np
+        )
 
-    return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
+        # Predict video segments
+        video_segments_all = predict_video_all(
+            global_predictor,
+            global_inference_state,
+            frame_idx
+        )
 
-import json
-from django.http import JsonResponse
+        # Create output directory if it doesn't exist
+        output_dir = os.path.join(settings.MEDIA_ROOT, 'output')
+        os.makedirs(output_dir, exist_ok=True)
 
-def add_point_view(request, predictor, inference_state):
+        # Generate output path
+        video_name = f"tracked_video_{obj_id}.mp4"
+        output_path = os.path.join(output_dir, video_name)
+
+        # Apply masks to video
+        apply_masks_to_video(
+            data.get('video_path'),
+            video_segments_all,
+            output_path,
+            effect=None,
+            object_effect=None,
+            background_effect=None
+        )
+
+        return JsonResponse({
+            'status': 'success',
+            'output_video': f'/media/output/{video_name}'
+        })
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'})
+
+
+@csrf_exempt
+def apply_effects(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        frame_index = data.get('frame_index')
-        x = data.get('x')
-        y = data.get('y')
-        obj_id = 1
+        object_effect = data.get('object_effect')
+        background_effect = data.get('background_effect')
+        video_path = data.get('video_path')
 
-        # 在这里调用 add_point 函数
-        add_point(predictor, inference_state, frame_index, obj_id, points=[x, y], labels=[1])
+        # Create output directory if it doesn't exist
+        output_dir = os.path.join(settings.MEDIA_ROOT, 'output')
+        os.makedirs(output_dir, exist_ok=True)
 
-        return JsonResponse({'status': 'success', 'message': 'Point added successfully.'})
+        # Generate output path for effect video
+        video_name = f"effect_video_{object_effect}_{background_effect}.mp4"
+        output_path = os.path.join(output_dir, video_name)
 
-    return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
+        global global_predictor, global_inference_state
 
+        # Get the latest video segments
+        frame_idx = int(data.get('frame_idx', 0))
+        video_segments_all = predict_video_all(
+            global_predictor,
+            global_inference_state,
+            frame_idx
+        )
+
+        # Apply effects to video
+        apply_masks_to_video(
+            video_path,
+            video_segments_all,
+            output_path,
+            effect=True,
+            object_effect=object_effect,
+            background_effect=background_effect
+        )
+
+        return JsonResponse({
+            'status': 'success',
+            'output_video': f'/media/output/{video_name}'
+        })
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'})
+
+
+@csrf_exempt
+def get_frame_info(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        video_path = data.get('video_path')
+
+        import cv2
+        cap = cv2.VideoCapture(video_path)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        cap.release()
+
+        return JsonResponse({
+            'total_frames': total_frames,
+            'fps': fps
+        })
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'})
