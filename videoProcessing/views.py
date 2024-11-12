@@ -94,6 +94,8 @@ def add_tracking_point(request):
             object_effect=None,
             background_effect=None
         )
+        video_name = f"tracked_video_{obj_id}.mp4"
+        output_path = os.path.join(output_dir, video_name)
         relative_output_path = os.path.relpath(output_path, settings.MEDIA_ROOT)
         video_url = os.path.join(settings.MEDIA_URL, relative_output_path)
 
@@ -147,7 +149,7 @@ def apply_effects(request):
             object_effect=object_effect,
             background_effect=background_effect
         )
-
+        video_name = f"effect_video_{object_effect}_{background_effect}.mp4"
         return JsonResponse({
             'status': 'success',
             'output_video': f'/media/output/{video_name}'
