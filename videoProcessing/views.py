@@ -82,7 +82,7 @@ def add_tracking_point(request):
         os.makedirs(output_dir, exist_ok=True)
 
         # Generate output path
-        video_name = f"tracked_video_{obj_id}.mp4"
+        video_name = f"tracked_video_{obj_id}.avi"
         output_path = os.path.join(output_dir, video_name)
 
         # Apply masks to video
@@ -125,7 +125,7 @@ def apply_effects(request):
         os.makedirs(output_dir, exist_ok=True)
 
         # Generate output path for effect video
-        video_name = f"effect_video_{object_effect}_{background_effect}.mp4"
+        video_name = f"effect_video_{object_effect}_{background_effect}.avi"
         output_path = os.path.join(output_dir, video_name)
 
         global global_predictor, global_inference_state

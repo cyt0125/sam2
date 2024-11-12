@@ -1,6 +1,8 @@
 import os
 import subprocess
 
+from django.urls import path
+
 # if using Apple MPS, fall back to CPU for unsupported ops
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 import numpy as np
@@ -283,7 +285,7 @@ def apply_masks_to_video(video_path, video_segments_all, output_path, effect, ob
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
     # Create a VideoWriter object to save the output video
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # Use mp4 encoding
+    fourcc = cv2.VideoWriter_fourcc(*"MJPG")  # Use mp4 encoding
     out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
     frame_index = 0
@@ -328,3 +330,41 @@ def apply_masks_to_video(video_path, video_segments_all, output_path, effect, ob
     cap.release()
     out.release()
     cv2.destroyAllWindows()
+
+    output_avi_path = output_path
+
+    base_name, ext = os.path.splitext(output_avi_path)
+
+    output_mp4_path = base_name + ".mp4"
+
+    output_avi_path = output_avi_path.replace('\\', '/')
+
+    output_mp4_path = output_mp4_path.replace('\\', '/')
+
+    print(output_mp4_path, output_avi_path)
+
+    convert_avi_to_mp4(output_avi_path, output_mp4_path)
+
+    # Optionally, you can remove the AVI file after conversion
+    # if os.path.exists(output_avi_path):
+    #     os.remove(output_avi_path)
+
+
+def convert_avi_to_mp4(input_avi, output_mp4):
+    print(input_avi, output_mp4)
+    ffmpeg_command = [
+        'ffmpeg', '-y',  # -y to overwrite the output file if it exists
+        '-i', input_avi,  # Input AVI file
+        '-vcodec', 'libx264',  # Use H.264 for video
+        '-acodec', 'aac',  # Use AAC for audio
+        '-strict', 'experimental',  # Use experimental AAC encoder if needed
+        output_mp4  # Output MP4 file
+    ]
+
+    try:
+        print(ffmpeg_command)
+        # Run the FFmpeg command to convert AVI to MP4
+        subprocess.run(ffmpeg_command, check=True)
+        print(f"Conversion to MP4 successful! Saved as {output_mp4}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error during conversion: {e}")
