@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c2bec0ce-b64a-452d-86d0-c604c7b4f632" name="更改" comment="add readme.md requirements.txt and notebooks of this project">
+    <list default="true" id="c2bec0ce-b64a-452d-86d0-c604c7b4f632" name="更改" comment="add huang">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/videoProcessing/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/videoProcessing/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/videoProcessing/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/videoProcessing/views.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,7 +26,6 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -37,8 +35,8 @@
 }</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;git@github.com:ruiczhu/videoProcessWithSam2.git&quot;,
-    &quot;accountId&quot;: &quot;cc4469ca-c30b-4597-90ad-8a6951a8e126&quot;
+    &quot;url&quot;: &quot;https://github.com/ruiczhu/videoProcessWithSam2.git&quot;,
+    &quot;accountId&quot;: &quot;efe23272-41b7-4e58-ba6e-114f4e6ab6e5&quot;
   }
 }</component>
   <component name="ProjectColorInfo">{
@@ -54,13 +52,11 @@
   &quot;keyToString&quot;: {
     &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
     &quot;Django Server.djangoProject.executor&quot;: &quot;Run&quot;,
-    &quot;Django 服务器.djangoProject.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.OpenDjangoStructureViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/zhuruichen/PycharmProjects/djangoProject/notebooks&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/26087/PycharmProjects/videoProcessWithSam2&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -70,11 +66,6 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
-  <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/notebooks" />
-    </key>
-  </component>
   <component name="RunManager">
     <configuration name="djangoProject" type="Python.DjangoServer" factoryName="Django server">
       <module name="djangoProject" />
@@ -86,8 +77,9 @@
         <env name="DJANGO_SETTINGS_MODULE" value="djangoProject.settings" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
+      <option name="SDK_NAME" value="cvProjct" />
+      <option name="WORKING_DIRECTORY" value="C:\Users\26087\PycharmProjects\videoProcessWithSam2" />
+      <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="launchJavascriptDebuger" value="false" />
@@ -105,8 +97,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-e768b9ed790e-JavaScript-PY-243.21565.199" />
-        <option value="bundled-python-sdk-cab1f2013843-4ae2d6a61b08-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-243.21565.199" />
+        <option value="bundled-js-predefined-d6986cc7102b-5c90d61e3bab-JavaScript-PY-242.23726.102" />
+        <option value="bundled-python-sdk-5e1850174b45-399fe30bd8c1-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-242.23726.102" />
       </set>
     </attachedChunks>
   </component>
@@ -126,12 +118,6 @@
       <workItem from="1731425131346" duration="242000" />
       <workItem from="1731425456348" duration="1583000" />
       <workItem from="1731427539963" duration="319000" />
-      <workItem from="1731464272706" duration="3439000" />
-      <workItem from="1731478320460" duration="741000" />
-      <workItem from="1731543368522" duration="14000" />
-      <workItem from="1731543404759" duration="792000" />
-      <workItem from="1731560793878" duration="2849000" />
-      <workItem from="1731607088655" duration="1208000" />
     </task>
     <task id="LOCAL-00001" summary="add">
       <option name="closed" value="true" />
@@ -149,31 +135,7 @@
       <option name="project" value="LOCAL" />
       <updated>1731425527633</updated>
     </task>
-    <task id="LOCAL-00003" summary="finish zhu">
-      <option name="closed" value="true" />
-      <created>1731428900394</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1731428900394</updated>
-    </task>
-    <task id="LOCAL-00004" summary="finish zhu">
-      <option name="closed" value="true" />
-      <created>1731428919459</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1731428919459</updated>
-    </task>
-    <task id="LOCAL-00005" summary="add readme.md requirements.txt and notebooks of this project">
-      <option name="closed" value="true" />
-      <created>1731467088728</created>
-      <option name="number" value="00005" />
-      <option name="presentableId" value="LOCAL-00005" />
-      <option name="project" value="LOCAL" />
-      <updated>1731467088728</updated>
-    </task>
-    <option name="localTasksCounter" value="6" />
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -193,8 +155,6 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="add" />
     <MESSAGE value="add huang" />
-    <MESSAGE value="finish zhu" />
-    <MESSAGE value="add readme.md requirements.txt and notebooks of this project" />
-    <option name="LAST_COMMIT_MESSAGE" value="add readme.md requirements.txt and notebooks of this project" />
+    <option name="LAST_COMMIT_MESSAGE" value="add huang" />
   </component>
 </project>

@@ -341,8 +341,8 @@ def apply_masks_to_video(video_path, video_segments_all, output_path, effect, ob
     convert_avi_to_mp4(output_avi_path, output_mp4_path)
 
     # Optionally, you can remove the AVI file after conversion
-    # if os.path.exists(output_avi_path):
-    #     os.remove(output_avi_path)
+    if os.path.exists(output_avi_path):
+        os.remove(output_avi_path)
 
 
 def convert_avi_to_mp4(input_avi, output_mp4):
