@@ -50,7 +50,8 @@ def init_predictor(model_size, device):
     }
 
     if model_size not in checkpoint_map or model_size not in cfg_map:
-        raise ValueError("Invalid model size. Please choose from 'large', 'base_plus', 'small', or 'tiny'.")
+        raise ValueError("Invalid model size. Please choose from 'large',"
+                         " 'base_plus', 'small', or 'tiny'.")
 
     checkpoint = checkpoint_map[model_size]
     cfg = cfg_map[model_size]
@@ -106,8 +107,7 @@ def predict_video(
         max_frame_num_to_track=None,
         reverse=False,
     ):
-    # run propagation throughout the video and collect the results in a dict
-    video_segments = {}  # video_segments contains the per-frame segmentation results
+    video_segments = {}
     predict_result = predictor.propagate_in_video(
         inference_state,
         start_frame_idx=start_frame_idx,
@@ -129,13 +129,10 @@ def predict_video_all(
     ):
 
     if start_frame_idx > 0:
-        # 生成两个新字典
         video_segments_pre = predict_video(predictor, inference_state, start_frame_idx=start_frame_idx-1, reverse=True)
         video_segments_post = predict_video(predictor, inference_state, start_frame_idx=start_frame_idx)
 
-        # 合并字典
         combined_dict = {**video_segments_pre, **video_segments_post}
-        # 排序键并创建新字典
         sorted_keys = sorted(combined_dict.keys())
         sorted_dict = {key: combined_dict[key] for key in sorted_keys}
         video_segments_all = sorted_dict

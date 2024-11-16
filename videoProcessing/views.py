@@ -22,17 +22,14 @@ def upload_video(request):
     if request.method == 'POST' and request.FILES.get('video'):
         video_file = request.FILES['video']
 
-        # Create uploads directory if it doesn't exist
         upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
         os.makedirs(upload_dir, exist_ok=True)
 
-        # Save uploaded video
         video_path = os.path.join(upload_dir, video_file.name)
         with open(video_path, 'wb+') as destination:
             for chunk in video_file.chunks():
                 destination.write(chunk)
 
-        # Initialize model
         global global_predictor, global_inference_state
         global_predictor, global_inference_state = init_state(video_path, model_size='tiny')
 
@@ -51,16 +48,14 @@ def add_tracking_point(request):
         data = json.loads(request.body)
         frame_idx = int(data.get('frame_idx'))
         obj_id = int(data.get('obj_id'))
-        points = data.get('points')  # This will now be [x, y] coordinates
+        points = data.get('points')
         labels = data.get('labels')
 
-        # Convert points to numpy array with correct shape
         points_np = np.array([points], dtype=np.float32)  # Shape: (1, 2)
         labels_np = np.array(labels, dtype=np.int32)
 
         global global_predictor, global_inference_state
 
-        # Add point and get masks
         out_obj_ids, out_mask_logits = add_point(
             global_predictor,
             global_inference_state,
@@ -70,22 +65,18 @@ def add_tracking_point(request):
             labels=labels_np
         )
 
-        # Predict video segments
         video_segments_all = predict_video_all(
             global_predictor,
             global_inference_state,
             frame_idx
         )
 
-        # Create output directory if it doesn't exist
         output_dir = os.path.join(settings.MEDIA_ROOT, 'output')
         os.makedirs(output_dir, exist_ok=True)
 
-        # Generate output path
         video_name = f"tracked_video_{obj_id}.avi"
         output_path = os.path.join(output_dir, video_name)
 
-        # Apply masks to video
         apply_masks_to_video(
             data.get('video_path'),
             video_segments_all,
@@ -102,7 +93,7 @@ def add_tracking_point(request):
         return JsonResponse({
             'status': 'success',
             'output_video': video_url,
-            'timestamp': str(datetime.now().timestamp())  # Add timestamp to prevent caching
+            'timestamp': str(datetime.now().timestamp())
         })
         response['Content-Disposition'] = 'inline'
         return response
@@ -122,17 +113,14 @@ def apply_effects(request):
         background_effect = data.get('background_effect')
         video_path = data.get('video_path')
 
-        # Create output directory if it doesn't exist
         output_dir = os.path.join(settings.MEDIA_ROOT, 'output')
         os.makedirs(output_dir, exist_ok=True)
 
-        # Generate output path for effect video
         video_name = f"effect_video_{object_effect}_{background_effect}.avi"
         output_path = os.path.join(output_dir, video_name)
 
         global global_predictor, global_inference_state
 
-        # Get the latest video segments
         frame_idx = int(data.get('frame_idx', 0))
         video_segments_all = predict_video_all(
             global_predictor,
@@ -140,7 +128,6 @@ def apply_effects(request):
             frame_idx
         )
 
-        # Apply effects to video
         apply_masks_to_video(
             video_path,
             video_segments_all,
