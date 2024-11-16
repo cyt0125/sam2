@@ -182,6 +182,11 @@ def apply_object_effect(frame, mask, effect):
     elif effect == "burst":
         result = draw_burst(result, mask)  # Use the 2D mask
 
+    elif effect == "outline":
+        result = frame.copy()
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cv2.drawContours(result, contours, -1, (255, 255, 0), 3)
+
     return result
 
 
@@ -254,7 +259,7 @@ def draw_burst(image, mask):
     height, width = image.shape[:2]
 
     # Define the number of rays and the angle step between them
-    num_rays = 10  # You can adjust this for more or fewer rays
+    num_rays = 60  # You can adjust this for more or fewer rays
     angle_step = 360 / num_rays
 
     # Draw rays from the center point outward
@@ -264,8 +269,20 @@ def draw_burst(image, mask):
         end_y = int(center_y + width * np.sin(radian))
 
         # Draw the line from the center to the calculated endpoint (white color, thickness 2)
-        cv2.line(result, (center_x, center_y), (end_x, end_y), (100, 0, 0), 10)
+        # result = cv2.line(result, (center_x, center_y), (end_x, end_y), (255, 255, 0), 10)
+        # 创建一个空白图像用于绘制线条
+        line_image = np.zeros_like(result)
 
+        # 在空白图像上绘制线条
+        cv2.line(line_image, (center_x, center_y), (end_x, end_y), (255, 255, 255), 5)
+
+        # 使用布尔遮罩来屏蔽线条图像
+        mask_inv = np.logical_not(mask)  # 反转遮罩，确保只在 False 的区域绘制
+        mask_inv_uint8 = (mask_inv * 255).astype(np.uint8)  # 将布尔遮罩转换为 uint8
+
+        # 使用遮罩将线条图像与原图结合
+        masked_line_image = cv2.bitwise_and(line_image, line_image, mask=mask_inv_uint8)
+        result = cv2.add(result, masked_line_image)
     return result
 
 
